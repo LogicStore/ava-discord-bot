@@ -1,38 +1,64 @@
 require('dotenv').config();
-const { Client, GatewayIntentBits } = require('discord.js');
+const { Client, GatewayIntentBits, MessageFlags } = require('discord.js');
 
 const commandHandler = require('./handlers/commandHandler');
 const eventHandler = require('./handlers/eventHandler');
+const componentHandler = require('./handlers/componentHandler');
 
 const client = new Client({
-    intents: [GatewayIntentBits.Guilds],
+    intents: [
+        GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildMembers,
+    ],
 });
 
 commandHandler(client);
 eventHandler(client);
+componentHandler(client);
 
-client.on('interactionCreate', async (interaction) => {
-    if (!interaction.isChatInputCommand()) return;
+function findComponentHandler(customId) {
+    return client.components.find(h =>
+        h.ids.some(id =>
+            id.endsWith(':*')
+                ? customId.startsWith(id.slice(0, -1))
+                : customId === id
+        )
+    );
+}
 
-    const command = client.commands.get(interaction.commandName);
-    if (!command) return;
-
+async function handleError(interaction, error) {
+    console.error(`[Error]`, error);
+    const msg = { content: 'An error occurred while processing this interaction.', flags: MessageFlags.Ephemeral };
     try {
-        await command.execute(interaction);
-    } catch (error) {
-        console.error(`[Erreur] Commande /${interaction.commandName} :`, error);
-        const msg = { content: 'Une erreur est survenue lors de l\'exécution de cette commande.', ephemeral: true };
         if (interaction.replied || interaction.deferred) {
             await interaction.followUp(msg);
         } else {
             await interaction.reply(msg);
         }
+    } catch {}
+}
+
+client.on('interactionCreate', async (interaction) => {
+    if (interaction.isChatInputCommand()) {
+        const command = client.commands.get(interaction.commandName);
+        if (!command) return;
+        try { await command.execute(interaction); }
+        catch (err) { await handleError(interaction, err); }
+        return;
+    }
+
+    if (interaction.isStringSelectMenu() || interaction.isButton() || interaction.isModalSubmit()) {
+        const handler = findComponentHandler(interaction.customId);
+        if (!handler) return;
+        try { await handler.execute(interaction); }
+        catch (err) { await handleError(interaction, err); }
     }
 });
 
 client.once('clientReady', () => {
-    console.log(`\n✅ Ava est en ligne ! Connectée en tant que ${client.user.tag}`);
-    console.log(`📦 ${client.commands.size} commande(s) chargée(s)\n`);
+    console.log(`\n✅ Ava is online! Logged in as ${client.user.tag}`);
+    console.log(`📦 ${client.commands.size} command(s) loaded`);
+    console.log(`🔧 ${client.components.length} component handler(s) loaded\n`);
 });
 
 client.login(process.env.DISCORD_TOKEN);

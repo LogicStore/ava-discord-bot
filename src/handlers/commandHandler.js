@@ -18,7 +18,7 @@ module.exports = (client) => {
             const command = require(path.join(categoryPath, file));
             if (command.data && command.execute) {
                 client.commands.set(command.data.name, command);
-                console.log(`[Commandes] /${command.data.name} chargée`);
+                console.log(`[Commands] /${command.data.name} loaded`);
             }
         }
     }

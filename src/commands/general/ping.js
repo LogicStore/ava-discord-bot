@@ -3,15 +3,14 @@ const { SlashCommandBuilder } = require('discord.js');
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('ping')
-        .setDescription('Vérifie si Ava est bien en ligne !'),
+        .setDescription('Check if Ava is online!'),
 
     async execute(interaction) {
         const latency = Date.now() - interaction.createdTimestamp;
         const apiLatency = Math.round(interaction.client.ws.ping);
 
         await interaction.reply({
-            content: `Pong ! 🏓 Latence : **${latency}ms** | API : **${apiLatency}ms**`,
-            ephemeral: false,
+            content: `Pong! Latency: **${latency}ms** | API: **${apiLatency}ms**`,
         });
     },
 };
