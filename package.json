@@ -1,0 +1,28 @@
+{
+  "name": "ava-discord-bot",
+  "version": "1.0.0",
+  "description": "Ava",
+  "main": "index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "deploy": "node deploy-commands.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/LogicStore/ava-discord-bot.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/LogicStore/ava-discord-bot/issues"
+  },
+  "homepage": "https://github.com/LogicStore/ava-discord-bot#readme",
+  "dependencies": {
+    "@discordjs/rest": "^2.6.1",
+    "discord-api-types": "^0.38.48",
+    "discord.js": "^14.26.4",
+    "dotenv": "^17.4.2"
+  }
+}
