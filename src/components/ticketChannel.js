@@ -6,8 +6,9 @@ const {
 
 const ticketQueries = require('../database/ticketQueries');
 const { buildWelcomeMessage } = require('./ticketPanel');
+const { notify } = require('../utils/dmNotify');
 const { sendLog } = require('../utils/logger');
-const { buildRatingButtons } = require('../utils/ratingEmbed');
+const { buildRatingPrompt } = require('../utils/ratingEmbed');
 
 const ACCENT = 0x0056CA;
 
@@ -35,56 +36,63 @@ async function handleClose(interaction) {
     const ticket = ticketQueries.getTicketByChannel(interaction.channelId);
     if (!ticket) return interaction.reply({ content: 'This channel is not a ticket.', flags: MessageFlags.Ephemeral });
 
-    ticketQueries.closeTicket(interaction.channelId);
+    await interaction.showModal(
+        new ModalBuilder()
+            .setCustomId('ticket_close_reason_modal')
+            .setTitle('Close Ticket')
+            .addComponents(
+                new ActionRowBuilder().addComponents(
+                    new TextInputBuilder()
+                        .setCustomId('reason')
+                        .setLabel('Reason for closing')
+                        .setStyle(TextInputStyle.Paragraph)
+                        .setMaxLength(500)
+                        .setRequired(true)
+                )
+            )
+    );
+}
+
+async function handleCloseReasonModal(interaction) {
+    const reason = interaction.fields.getTextInputValue('reason').trim();
+    const ticket = ticketQueries.getTicketByChannel(interaction.channelId);
+    if (!ticket) return interaction.reply({ content: 'Ticket not found.', flags: MessageFlags.Ephemeral });
+
+    ticketQueries.closeTicket(interaction.channelId, interaction.user.id, reason);
 
     await sendLog(interaction.client, interaction.guildId, [
         `## Ticket Closed`,
         `**Ticket:** #${ticket.id}`,
         `**Closed by:** <@${interaction.user.id}>`,
         `**Opened by:** <@${ticket.user_id}>`,
+        `**Reason:** ${reason}`,
     ]);
 
     const isCreator = interaction.user.id === ticket.user_id;
 
     if (isCreator) {
-        const ratingContainer = new ContainerBuilder()
-            .setAccentColor(ACCENT)
-            .addTextDisplayComponents(
-                new TextDisplayBuilder().setContent(
-                    `## Rate Your Experience\nHow would you rate the service you received? Select a score from 1 to 5.`
-                )
-            )
-            .addSeparatorComponents(new SeparatorBuilder())
-            .addActionRowComponents(buildRatingButtons(ticket.id, 'rating_close'));
-
-        await interaction.update({ components: [ratingContainer], flags: MessageFlags.IsComponentsV2 });
+        await interaction.reply({
+            components: [buildRatingPrompt(ticket.id, 'rating_close')],
+            flags: MessageFlags.IsComponentsV2,
+        });
         setTimeout(() => interaction.channel.delete('Ticket closed').catch(() => {}), 120_000);
     } else {
         const closedContainer = new ContainerBuilder()
             .setAccentColor(ACCENT)
             .addTextDisplayComponents(
                 new TextDisplayBuilder().setContent(
-                    `## Ticket Closed\nClosed by <@${interaction.user.id}>.\n-# This channel will be deleted in 5 seconds.`
+                    `## Ticket Closed\nClosed by <@${interaction.user.id}>.\n**Reason:** ${reason}\n-# This channel will be deleted in 5 seconds.`
                 )
             );
-
-        await interaction.update({ components: [closedContainer], flags: MessageFlags.IsComponentsV2 });
+        await interaction.reply({ components: [closedContainer], flags: MessageFlags.IsComponentsV2 });
         setTimeout(() => interaction.channel.delete('Ticket closed').catch(() => {}), 5000);
 
-        // Send rating DM to creator
         try {
             const user = await interaction.client.users.fetch(ticket.user_id);
-            const dmContainer = new ContainerBuilder()
-                .setAccentColor(ACCENT)
-                .addTextDisplayComponents(
-                    new TextDisplayBuilder().setContent(
-                        `## Rate Your Experience\nYour ticket **#${ticket.id}** in **${interaction.guild.name}** has been closed. How would you rate the service?`
-                    )
-                )
-                .addSeparatorComponents(new SeparatorBuilder())
-                .addActionRowComponents(buildRatingButtons(ticket.id, 'rating_dm', interaction.guildId));
-
-            await user.send({ components: [dmContainer], flags: MessageFlags.IsComponentsV2 });
+            await user.send({
+                components: [buildRatingPrompt(ticket.id, 'rating_dm', interaction.guildId)],
+                flags: MessageFlags.IsComponentsV2,
+            });
         } catch {}
     }
 }
@@ -224,18 +232,19 @@ async function handleAddMe(interaction) {
 }
 
 module.exports = {
-    ids: ['ticket_close', 'ticket_rename', 'ticket_modal_rename', 'ticket_claim', 'ticket_add_me'],
+    ids: ['ticket_close', 'ticket_close_reason_modal', 'ticket_rename', 'ticket_modal_rename', 'ticket_claim', 'ticket_add_me'],
 
     hasTicketPermission,
     hasStaffPermission,
 
     async execute(interaction) {
         switch (interaction.customId) {
-            case 'ticket_close':        return handleClose(interaction);
-            case 'ticket_rename':       return handleRename(interaction);
-            case 'ticket_modal_rename': return handleRenameModal(interaction);
-            case 'ticket_claim':        return handleClaim(interaction);
-            case 'ticket_add_me':       return handleAddMe(interaction);
+            case 'ticket_close':              return handleClose(interaction);
+            case 'ticket_close_reason_modal': return handleCloseReasonModal(interaction);
+            case 'ticket_rename':             return handleRename(interaction);
+            case 'ticket_modal_rename':       return handleRenameModal(interaction);
+            case 'ticket_claim':              return handleClaim(interaction);
+            case 'ticket_add_me':             return handleAddMe(interaction);
         }
     },
 };

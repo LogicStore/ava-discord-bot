@@ -9,19 +9,15 @@ module.exports = {
         db.prepare(`
             INSERT INTO rating_config (guild_id, channel_id)
             VALUES (?, ?)
-            ON CONFLICT(guild_id) DO UPDATE SET channel_id = excluded.channel_id, message_id = NULL
+            ON CONFLICT(guild_id) DO UPDATE SET channel_id = excluded.channel_id
         `).run(guildId, channelId);
     },
 
-    updateMessageId(guildId, messageId) {
-        db.prepare('UPDATE rating_config SET message_id = ? WHERE guild_id = ?').run(messageId, guildId);
-    },
-
-    addRating(guildId, ticketId, userId, stars) {
+    addRating(guildId, ticketId, userId, stars, feedback) {
         return db.prepare(`
-            INSERT OR IGNORE INTO ratings (guild_id, ticket_id, user_id, rating)
-            VALUES (?, ?, ?, ?)
-        `).run(guildId, ticketId, userId, stars);
+            INSERT OR IGNORE INTO ratings (guild_id, ticket_id, user_id, rating, feedback)
+            VALUES (?, ?, ?, ?, ?)
+        `).run(guildId, ticketId, userId, stars, feedback ?? null);
     },
 
     getStats(guildId) {

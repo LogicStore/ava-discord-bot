@@ -4,51 +4,70 @@ const {
 } = require('discord.js');
 
 const ratingQueries = require('../database/ratingQueries');
+const ticketQueries = require('../database/ticketQueries');
 
 const ACCENT = 0x0056CA;
 
-function starsText(average, total) {
-    if (total === 0) return 'No ratings yet.';
-    const filled = Math.round(average);
-    return `${'★'.repeat(filled)}${'☆'.repeat(5 - filled)}  **${average.toFixed(1)}/5**\nBased on ${total} rating${total === 1 ? '' : 's'}`;
-}
-
-function buildEmbed(average, total) {
+function buildRatingPrompt(ticketId, prefix, guildId = null) {
+    const base = guildId ? `${prefix}:${guildId}:${ticketId}` : `${prefix}:${ticketId}`;
     return new ContainerBuilder()
         .setAccentColor(ACCENT)
         .addTextDisplayComponents(
-            new TextDisplayBuilder().setContent('## Service Ratings\nOverall satisfaction across all closed tickets.')
+            new TextDisplayBuilder().setContent(
+                `## Rate Your Experience\nHow would you rate the service you received? Select a score from 1 to 5.`
+            )
         )
         .addSeparatorComponents(new SeparatorBuilder())
-        .addTextDisplayComponents(
-            new TextDisplayBuilder().setContent(starsText(average, total))
+        .addActionRowComponents(
+            new ActionRowBuilder().addComponents(
+                [1, 2, 3, 4, 5].map(n =>
+                    new ButtonBuilder()
+                        .setCustomId(`${base}:${n}`)
+                        .setLabel(String(n))
+                        .setStyle(ButtonStyle.Secondary)
+                )
+            )
         );
 }
 
-function buildRatingButtons(ticketId, prefix, guildId = null) {
-    const base = guildId ? `${prefix}:${guildId}:${ticketId}` : `${prefix}:${ticketId}`;
-    return new ActionRowBuilder().addComponents(
-        [1, 2, 3, 4, 5].map(n =>
-            new ButtonBuilder()
-                .setCustomId(`${base}:${n}`)
-                .setLabel(`${n}`)
-                .setStyle(ButtonStyle.Secondary)
-        )
-    );
-}
-
-async function updateRatingEmbed(client, guildId) {
+async function sendRatingMessage(client, guildId, ticket, stars, feedback) {
     try {
         const config = ratingQueries.getConfig(guildId);
-        if (!config?.message_id) return;
+        if (!config) return;
 
-        const { average, total } = ratingQueries.getStats(guildId);
         const channel = await client.channels.fetch(config.channel_id);
-        const message = await channel.messages.fetch(config.message_id);
-        await message.edit({ components: [buildEmbed(average, total)], flags: MessageFlags.IsComponentsV2 });
+        if (!channel) return;
+
+        const panel = ticketQueries.getPanelByTicketId(ticket.id);
+        const starsDisplay = `${'★'.repeat(stars)}${'☆'.repeat(5 - stars)}`;
+
+        const lines = [
+            `## New Rating`,
+            `<@${ticket.user_id}> has submitted a rating for their ticket experience!`,
+            ``,
+            `**Ticket Information**`,
+            `• Open Date: <t:${ticket.created_at}:f>`,
+            `• Panel: ${panel?.name ?? 'Unknown'}`,
+            ticket.subject ? `• Subject: ${ticket.subject}` : null,
+            ``,
+            `**Rating**`,
+            `• ${starsDisplay} (${stars}/5)`,
+            feedback ? `• "${feedback}"` : null,
+            ``,
+            `**Close Information**`,
+            `• Closed By: <@${ticket.closed_by}>`,
+            `• Close Date: <t:${ticket.closed_at}:f>`,
+            `• Reason: ${ticket.close_reason ?? 'No reason provided'}`,
+        ].filter(l => l !== null).join('\n');
+
+        const container = new ContainerBuilder()
+            .setAccentColor(ACCENT)
+            .addTextDisplayComponents(new TextDisplayBuilder().setContent(lines));
+
+        await channel.send({ components: [container], flags: MessageFlags.IsComponentsV2 });
     } catch {
         // Fail silently
     }
 }
 
-module.exports = { buildEmbed, buildRatingButtons, updateRatingEmbed };
+module.exports = { buildRatingPrompt, sendRatingMessage };

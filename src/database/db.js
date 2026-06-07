@@ -78,5 +78,8 @@ db.exec(`
 // Migrations
 try { db.exec("ALTER TABLE ticket_panels ADD COLUMN staff_roles TEXT NOT NULL DEFAULT '[]'"); } catch {}
 try { db.exec("ALTER TABLE tickets ADD COLUMN claimed_by TEXT"); } catch {}
+try { db.exec("ALTER TABLE tickets ADD COLUMN closed_by TEXT"); } catch {}
+try { db.exec("ALTER TABLE tickets ADD COLUMN close_reason TEXT"); } catch {}
+try { db.exec("ALTER TABLE ratings ADD COLUMN feedback TEXT"); } catch {}
 
 module.exports = db;

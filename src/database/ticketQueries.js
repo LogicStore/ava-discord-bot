@@ -66,11 +66,24 @@ module.exports = {
         return db.prepare("SELECT * FROM tickets WHERE category_id = ? AND status = 'open'").all(categoryId);
     },
 
-    closeTicket(channelId) {
+    closeTicket(channelId, closedBy, reason) {
         db.prepare(`
-            UPDATE tickets SET status = 'closed', closed_at = unixepoch()
+            UPDATE tickets SET status = 'closed', closed_at = unixepoch(), closed_by = ?, close_reason = ?
             WHERE channel_id = ?
-        `).run(channelId);
+        `).run(closedBy, reason, channelId);
+    },
+
+    getTicketById(id) {
+        return db.prepare('SELECT * FROM tickets WHERE id = ?').get(id);
+    },
+
+    getPanelByTicketId(ticketId) {
+        return db.prepare(`
+            SELECT tp.* FROM ticket_panels tp
+            JOIN ticket_categories tc ON tc.panel_id = tp.id
+            JOIN tickets t ON t.category_id = tc.id
+            WHERE t.id = ?
+        `).get(ticketId);
     },
 
     claimTicket(channelId, userId) {
