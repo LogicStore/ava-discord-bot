@@ -265,6 +265,7 @@ async function handleCreate(interaction) {
 
     const giveaway = giveawayQueries.getById(giveawayId);
     const channel = await interaction.guild.channels.fetch(session.targetChannelId);
+    await channel.send({ content: '@everyone' });
     const message = await channel.send({ components: [buildGiveawayEmbed(giveaway, 0)], flags: MessageFlags.IsComponentsV2 });
 
     giveawayQueries.updateMessageId(giveawayId, message.id);
