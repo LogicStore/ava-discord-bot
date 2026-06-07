@@ -9,6 +9,7 @@ const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
         GatewayIntentBits.GuildMembers,
+        GatewayIntentBits.GuildMessages,
     ],
 });
 
@@ -47,7 +48,7 @@ client.on('interactionCreate', async (interaction) => {
         return;
     }
 
-    if (interaction.isStringSelectMenu() || interaction.isButton() || interaction.isModalSubmit()) {
+    if (interaction.isAnySelectMenu() || interaction.isButton() || interaction.isModalSubmit()) {
         const handler = findComponentHandler(interaction.customId);
         if (!handler) return;
         try { await handler.execute(interaction); }

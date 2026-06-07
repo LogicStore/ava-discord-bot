@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, MessageFlags } = require('discord.js');
 const ticketQueries = require('../../database/ticketQueries');
-const { hasTicketPermission } = require('../../components/ticketChannel');
+const { hasStaffPermission } = require('../../components/ticketChannel');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -18,7 +18,7 @@ module.exports = {
         const ticket = ticketQueries.getTicketByChannel(interaction.channelId);
         if (!ticket) return interaction.reply({ content: 'This channel is not a ticket.', flags: MessageFlags.Ephemeral });
 
-        if (!hasTicketPermission(interaction, ticket)) {
+        if (!hasStaffPermission(interaction)) {
             return interaction.reply({ content: 'You do not have permission to rename this ticket.', flags: MessageFlags.Ephemeral });
         }
 

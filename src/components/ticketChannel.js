@@ -1,11 +1,12 @@
 const {
     ModalBuilder, ActionRowBuilder, TextInputBuilder, TextInputStyle,
-    ContainerBuilder, TextDisplayBuilder, SeparatorBuilder, MessageFlags,
+    ContainerBuilder, TextDisplayBuilder, MessageFlags,
     PermissionsBitField,
 } = require('discord.js');
 
 const ticketQueries = require('../database/ticketQueries');
 const { buildWelcomeMessage } = require('./ticketPanel');
+const { notify } = require('../utils/dmNotify');
 
 const ACCENT = 0x0056CA;
 
@@ -22,11 +23,27 @@ function hasTicketPermission(interaction, ticket) {
     return staffRoles.some(rid => interaction.member.roles.cache.has(rid));
 }
 
+function hasStaffPermission(interaction) {
+    const adminRoleId = process.env.ADMIN_ROLE_ID;
+    if (adminRoleId && interaction.member.roles.cache.has(adminRoleId)) return true;
+    const staffRoles = getStaffRoles(interaction.channelId);
+    return staffRoles.some(rid => interaction.member.roles.cache.has(rid));
+}
+
 async function handleClose(interaction) {
     const ticket = ticketQueries.getTicketByChannel(interaction.channelId);
     if (!ticket) return interaction.reply({ content: 'This channel is not a ticket.', flags: MessageFlags.Ephemeral });
 
     ticketQueries.closeTicket(interaction.channelId);
+
+    // Notify creator if someone else closed the ticket
+    if (interaction.user.id !== ticket.user_id) {
+        await notify(
+            interaction.client,
+            ticket.user_id,
+            `Your ticket **#${ticket.id}** in **${interaction.guild.name}** has been closed by **${interaction.user.tag}**.`
+        );
+    }
 
     const closedContainer = new ContainerBuilder()
         .setAccentColor(ACCENT)
@@ -41,6 +58,10 @@ async function handleClose(interaction) {
 }
 
 async function handleRename(interaction) {
+    if (!hasStaffPermission(interaction)) {
+        return interaction.reply({ content: 'You do not have permission to rename this ticket.', flags: MessageFlags.Ephemeral });
+    }
+
     await interaction.showModal(
         new ModalBuilder()
             .setCustomId('ticket_modal_rename')
@@ -86,7 +107,6 @@ async function handleClaim(interaction) {
 
     await interaction.deferUpdate();
 
-    // Grant write access to staff roles and the claimer
     for (const roleId of staffRoles) {
         await interaction.channel.permissionOverwrites.edit(roleId, {
             ViewChannel: true,
@@ -104,16 +124,53 @@ async function handleClaim(interaction) {
 
     ticketQueries.claimTicket(interaction.channelId, interaction.user.id);
 
+    const jumpUrl = `https://discord.com/channels/${interaction.guildId}/${interaction.channelId}`;
+    await notify(
+        interaction.client,
+        ticket.user_id,
+        `Your ticket **#${ticket.id}** in **${interaction.guild.name}** has been claimed by **${interaction.user.tag}**.\n${jumpUrl}`
+    );
+
     const category = ticketQueries.getCategoryById(ticket.category_id);
     const updatedContainer = buildWelcomeMessage(ticket.id, category, ticket.subject, ticket.user_id, interaction.user.id);
 
     await interaction.editReply({ components: [updatedContainer], flags: MessageFlags.IsComponentsV2 });
 }
 
+async function handleAddMe(interaction) {
+    const ticket = ticketQueries.getTicketByChannel(interaction.channelId);
+    if (!ticket) return interaction.reply({ content: 'This channel is not a ticket.', flags: MessageFlags.Ephemeral });
+
+    if (!hasStaffPermission(interaction)) {
+        return interaction.reply({ content: 'You do not have permission to join this ticket.', flags: MessageFlags.Ephemeral });
+    }
+
+    const existing = interaction.channel.permissionOverwrites.cache.get(interaction.user.id);
+    if (existing?.allow.has(PermissionsBitField.Flags.SendMessages)) {
+        return interaction.reply({ content: 'You already have access to this ticket.', flags: MessageFlags.Ephemeral });
+    }
+
+    await interaction.channel.permissionOverwrites.edit(interaction.user.id, {
+        ViewChannel: true,
+        SendMessages: true,
+        ReadMessageHistory: true,
+        AttachFiles: true,
+    });
+
+    await notify(
+        interaction.client,
+        ticket.user_id,
+        `**${interaction.user.tag}** has joined your ticket **#${ticket.id}** in **${interaction.guild.name}** to assist you.`
+    );
+
+    await interaction.reply({ content: `<@${interaction.user.id}> joined this ticket.` });
+}
+
 module.exports = {
-    ids: ['ticket_close', 'ticket_rename', 'ticket_modal_rename', 'ticket_claim'],
+    ids: ['ticket_close', 'ticket_rename', 'ticket_modal_rename', 'ticket_claim', 'ticket_add_me'],
 
     hasTicketPermission,
+    hasStaffPermission,
 
     async execute(interaction) {
         switch (interaction.customId) {
@@ -121,6 +178,7 @@ module.exports = {
             case 'ticket_rename':       return handleRename(interaction);
             case 'ticket_modal_rename': return handleRenameModal(interaction);
             case 'ticket_claim':        return handleClaim(interaction);
+            case 'ticket_add_me':       return handleAddMe(interaction);
         }
     },
 };

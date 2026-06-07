@@ -123,6 +123,10 @@ function buildWelcomeMessage(ticketId, category, subject, userId, claimedBy) {
         );
     }
 
+    buttons.push(
+        new ButtonBuilder().setCustomId('ticket_add_me').setLabel('Add me').setStyle(ButtonStyle.Secondary)
+    );
+
     return new ContainerBuilder()
         .setAccentColor(ACCENT)
         .addTextDisplayComponents(new TextDisplayBuilder().setContent(lines.join('\n')))
