@@ -1,13 +1,13 @@
 const {
     ModalBuilder, ActionRowBuilder, TextInputBuilder, TextInputStyle,
-    ContainerBuilder, TextDisplayBuilder, MessageFlags,
+    ContainerBuilder, TextDisplayBuilder, SeparatorBuilder, MessageFlags,
     PermissionsBitField,
 } = require('discord.js');
 
 const ticketQueries = require('../database/ticketQueries');
 const { buildWelcomeMessage } = require('./ticketPanel');
-const { notify } = require('../utils/dmNotify');
 const { sendLog } = require('../utils/logger');
+const { buildRatingButtons } = require('../utils/ratingEmbed');
 
 const ACCENT = 0x0056CA;
 
@@ -44,24 +44,49 @@ async function handleClose(interaction) {
         `**Opened by:** <@${ticket.user_id}>`,
     ]);
 
-    if (interaction.user.id !== ticket.user_id) {
-        await notify(
-            interaction.client,
-            ticket.user_id,
-            `Your ticket **#${ticket.id}** in **${interaction.guild.name}** has been closed by **${interaction.user.tag}**.`
-        );
-    }
+    const isCreator = interaction.user.id === ticket.user_id;
 
-    const closedContainer = new ContainerBuilder()
-        .setAccentColor(ACCENT)
-        .addTextDisplayComponents(
-            new TextDisplayBuilder().setContent(
-                `## Ticket Closed\nClosed by <@${interaction.user.id}>.\n-# This channel will be deleted in 5 seconds.`
+    if (isCreator) {
+        const ratingContainer = new ContainerBuilder()
+            .setAccentColor(ACCENT)
+            .addTextDisplayComponents(
+                new TextDisplayBuilder().setContent(
+                    `## Rate Your Experience\nHow would you rate the service you received? Select a score from 1 to 5.`
+                )
             )
-        );
+            .addSeparatorComponents(new SeparatorBuilder())
+            .addActionRowComponents(buildRatingButtons(ticket.id, 'rating_close'));
 
-    await interaction.update({ components: [closedContainer], flags: MessageFlags.IsComponentsV2 });
-    setTimeout(() => interaction.channel.delete('Ticket closed').catch(() => {}), 5000);
+        await interaction.update({ components: [ratingContainer], flags: MessageFlags.IsComponentsV2 });
+        setTimeout(() => interaction.channel.delete('Ticket closed').catch(() => {}), 120_000);
+    } else {
+        const closedContainer = new ContainerBuilder()
+            .setAccentColor(ACCENT)
+            .addTextDisplayComponents(
+                new TextDisplayBuilder().setContent(
+                    `## Ticket Closed\nClosed by <@${interaction.user.id}>.\n-# This channel will be deleted in 5 seconds.`
+                )
+            );
+
+        await interaction.update({ components: [closedContainer], flags: MessageFlags.IsComponentsV2 });
+        setTimeout(() => interaction.channel.delete('Ticket closed').catch(() => {}), 5000);
+
+        // Send rating DM to creator
+        try {
+            const user = await interaction.client.users.fetch(ticket.user_id);
+            const dmContainer = new ContainerBuilder()
+                .setAccentColor(ACCENT)
+                .addTextDisplayComponents(
+                    new TextDisplayBuilder().setContent(
+                        `## Rate Your Experience\nYour ticket **#${ticket.id}** in **${interaction.guild.name}** has been closed. How would you rate the service?`
+                    )
+                )
+                .addSeparatorComponents(new SeparatorBuilder())
+                .addActionRowComponents(buildRatingButtons(ticket.id, 'rating_dm', interaction.guildId));
+
+            await user.send({ components: [dmContainer], flags: MessageFlags.IsComponentsV2 });
+        } catch {}
+    }
 }
 
 async function handleRename(interaction) {

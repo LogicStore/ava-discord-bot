@@ -77,6 +77,10 @@ module.exports = {
         db.prepare('UPDATE tickets SET claimed_by = ? WHERE channel_id = ?').run(userId, channelId);
     },
 
+    getOpenTicketByUser(guildId, userId) {
+        return db.prepare("SELECT * FROM tickets WHERE guild_id = ? AND user_id = ? AND status = 'open'").get(guildId, userId);
+    },
+
     getPanelByTicketChannel(channelId) {
         return db.prepare(`
             SELECT tp.* FROM ticket_panels tp

@@ -57,6 +57,24 @@ db.exec(`
     );
 `);
 
+db.exec(`
+    CREATE TABLE IF NOT EXISTS rating_config (
+        guild_id   TEXT PRIMARY KEY,
+        channel_id TEXT NOT NULL,
+        message_id TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS ratings (
+        id         INTEGER PRIMARY KEY AUTOINCREMENT,
+        guild_id   TEXT NOT NULL,
+        ticket_id  INTEGER NOT NULL,
+        user_id    TEXT NOT NULL,
+        rating     INTEGER NOT NULL CHECK(rating BETWEEN 1 AND 5),
+        rated_at   DATETIME DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(guild_id, ticket_id)
+    );
+`);
+
 // Migrations
 try { db.exec("ALTER TABLE ticket_panels ADD COLUMN staff_roles TEXT NOT NULL DEFAULT '[]'"); } catch {}
 try { db.exec("ALTER TABLE tickets ADD COLUMN claimed_by TEXT"); } catch {}

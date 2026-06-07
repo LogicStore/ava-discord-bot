@@ -39,6 +39,14 @@ async function handleSubjectModal(interaction) {
 
     const subject = interaction.fields.getTextInputValue('subject').trim() || null;
 
+    const existing = ticketQueries.getOpenTicketByUser(interaction.guild.id, interaction.user.id);
+    if (existing) {
+        return interaction.reply({
+            content: `You already have an open ticket: <#${existing.channel_id}>`,
+            flags: MessageFlags.Ephemeral,
+        });
+    }
+
     await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
     const guild = interaction.guild;
