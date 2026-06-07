@@ -65,7 +65,7 @@ async function handleFeedbackModal(interaction) {
     await interaction.reply({ components: [thankContainer], flags: MessageFlags.IsComponentsV2 });
 
     if (isInChannel) {
-        setTimeout(() => interaction.channel.delete('Ticket rated and closed').catch(() => {}), 3000);
+        setTimeout(() => interaction.channel?.delete('Ticket rated and closed').catch(() => {}), 3000);
     }
 }
 

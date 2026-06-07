@@ -75,7 +75,7 @@ async function handleCloseReasonModal(interaction) {
             components: [buildRatingPrompt(ticket.id, 'rating_close')],
             flags: MessageFlags.IsComponentsV2,
         });
-        setTimeout(() => interaction.channel.delete('Ticket closed').catch(() => {}), 120_000);
+        setTimeout(() => interaction.channel?.delete('Ticket closed').catch(() => {}), 120_000);
     } else {
         const closedContainer = new ContainerBuilder()
             .setAccentColor(ACCENT)
@@ -85,7 +85,7 @@ async function handleCloseReasonModal(interaction) {
                 )
             );
         await interaction.reply({ components: [closedContainer], flags: MessageFlags.IsComponentsV2 });
-        setTimeout(() => interaction.channel.delete('Ticket closed').catch(() => {}), 5000);
+        setTimeout(() => interaction.channel?.delete('Ticket closed').catch(() => {}), 5000);
 
         try {
             const user = await interaction.client.users.fetch(ticket.user_id);
