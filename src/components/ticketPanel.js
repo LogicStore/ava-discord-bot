@@ -22,11 +22,12 @@ async function handleOpenButton(interaction) {
                 new ActionRowBuilder().addComponents(
                     new TextInputBuilder()
                         .setCustomId('subject')
-                        .setLabel('Subject (optional)')
-                        .setStyle(TextInputStyle.Short)
-                        .setPlaceholder('Brief description of your issue...')
-                        .setMaxLength(100)
-                        .setRequired(false)
+                        .setLabel('Describe your issue in detail')
+                        .setStyle(TextInputStyle.Paragraph)
+                        .setPlaceholder('Explain your issue as precisely as possible so the support team can help you efficiently...')
+                        .setMinLength(20)
+                        .setMaxLength(1000)
+                        .setRequired(true)
                 )
             )
     );
@@ -37,7 +38,7 @@ async function handleSubjectModal(interaction) {
     const category = ticketQueries.getCategoryById(catId);
     if (!category) return interaction.reply({ content: 'Category not found.', flags: MessageFlags.Ephemeral });
 
-    const subject = interaction.fields.getTextInputValue('subject').trim() || null;
+    const subject = interaction.fields.getTextInputValue('subject').trim();
 
     const existing = ticketQueries.getOpenTicketByUser(interaction.guild.id, interaction.user.id);
     if (existing) {

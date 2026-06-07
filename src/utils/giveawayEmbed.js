@@ -4,7 +4,7 @@ const {
     StringSelectMenuBuilder, MessageFlags,
 } = require('discord.js');
 
-const THUMBNAIL = 'https://imagedelivery.net/a01l0g2PBuSyl01US7o1cQ/b74c4e2f-a31d-400a-ec74-10eb71ce2b00/public';
+const THUMBNAIL = 'https://cdn.discordapp.com/attachments/1513123315470827590/1513217519727546388/logo-logic-wblue.gif?ex=6a26ed22&is=6a259ba2&hm=61b4413c7b13b80a825fb67bd59fbfffe89646de3d708f6fcdb3d3c10241b1bd&';
 
 const ACCENT = 0x0056CA;
 
