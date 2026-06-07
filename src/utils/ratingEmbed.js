@@ -39,7 +39,7 @@ async function sendRatingMessage(client, guildId, ticket, stars, feedback) {
         if (!channel) return;
 
         const panel = ticketQueries.getPanelByTicketId(ticket.id);
-        const starsDisplay = `${'★'.repeat(stars)}${'☆'.repeat(5 - stars)}`;
+        const starsDisplay = '⭐'.repeat(stars);
 
         const lines = [
             `## New Rating`,
