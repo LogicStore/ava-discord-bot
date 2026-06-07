@@ -141,5 +141,6 @@ try { db.exec("ALTER TABLE ticket_panels ADD COLUMN required_role_id TEXT"); } c
 try { db.exec("ALTER TABLE tickets ADD COLUMN close_reason TEXT"); } catch {}
 try { db.exec("ALTER TABLE ratings ADD COLUMN feedback TEXT"); } catch {}
 try { db.exec("ALTER TABLE ideas ADD COLUMN status TEXT NOT NULL DEFAULT 'pending'"); } catch {}
+try { db.exec("ALTER TABLE ideas_config ADD COLUMN closer_role_id TEXT"); } catch {}
 
 module.exports = db;

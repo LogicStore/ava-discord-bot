@@ -5,8 +5,8 @@ module.exports = {
         return db.prepare('SELECT * FROM ideas_config WHERE guild_id = ?').get(guildId);
     },
 
-    setConfig(guildId, channelId) {
-        db.prepare('INSERT OR REPLACE INTO ideas_config (guild_id, channel_id) VALUES (?, ?)').run(guildId, channelId);
+    setConfig(guildId, channelId, closerRoleId = null) {
+        db.prepare('INSERT OR REPLACE INTO ideas_config (guild_id, channel_id, closer_role_id) VALUES (?, ?, ?)').run(guildId, channelId, closerRoleId);
     },
 
     createIdea(messageId, guildId, channelId, authorId, authorName, avatarUrl, content) {

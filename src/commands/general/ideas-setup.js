@@ -11,6 +11,12 @@ module.exports = {
                 .setDescription('Channel where community ideas will be posted')
                 .addChannelTypes(ChannelType.GuildText)
                 .setRequired(true)
+        )
+        .addRoleOption(option =>
+            option
+                .setName('closer_role')
+                .setDescription('Role allowed to accept or reject ideas')
+                .setRequired(false)
         ),
 
     async execute(interaction) {
@@ -23,11 +29,14 @@ module.exports = {
             });
         }
 
-        const channel = interaction.options.getChannel('channel');
-        ideasQueries.setConfig(interaction.guildId, channel.id);
+        const channel    = interaction.options.getChannel('channel');
+        const closerRole = interaction.options.getRole('closer_role');
 
+        ideasQueries.setConfig(interaction.guildId, channel.id, closerRole?.id ?? null);
+
+        const roleInfo = closerRole ? ` Moderators: <@&${closerRole.id}>.` : '';
         return interaction.reply({
-            content: `Ideas channel configured: <#${channel.id}>. Messages sent there will be converted into suggestion posts.`,
+            content: `Ideas channel configured: <#${channel.id}>.${roleInfo}`,
             flags: MessageFlags.Ephemeral,
         });
     },

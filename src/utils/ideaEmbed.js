@@ -36,10 +36,13 @@ function buildIdeaEmbed(idea, upvotes, downvotes) {
                     new ThumbnailBuilder().setURL(idea.avatar_url || 'https://cdn.discordapp.com/embed/avatars/0.png')
                 )
         )
-        .addSeparatorComponents(new SeparatorBuilder())
-        .addTextDisplayComponents(
-            new TextDisplayBuilder().setContent(`**Votes**\n✅ ${upvotes} - ❌ ${downvotes}`)
-        );
+    if (!closed) {
+        container
+            .addSeparatorComponents(new SeparatorBuilder())
+            .addTextDisplayComponents(
+                new TextDisplayBuilder().setContent(`**Votes**\n✅ ${upvotes} - ❌ ${downvotes}`)
+            );
+    }
 
     if (hasId && !closed) {
         container

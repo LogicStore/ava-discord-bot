@@ -26,9 +26,15 @@ async function handleVote(interaction) {
     await interaction.update(buildIdeaEmbed(idea, upvotes, downvotes));
 }
 
-async function handleClose(interaction) {
+function canClose(interaction, config) {
     const adminRoleId = process.env.ADMIN_ROLE_ID;
-    if (!adminRoleId || !interaction.member.roles.cache.has(adminRoleId)) {
+    const roles = interaction.member.roles.cache;
+    return (adminRoleId && roles.has(adminRoleId)) || (config?.closer_role_id && roles.has(config.closer_role_id));
+}
+
+async function handleClose(interaction) {
+    const config = ideasQueries.getConfig(interaction.guildId);
+    if (!canClose(interaction, config)) {
         return interaction.reply({ content: 'You do not have permission to close ideas.', flags: MessageFlags.Ephemeral });
     }
 
@@ -45,8 +51,8 @@ async function handleClose(interaction) {
 }
 
 async function handleDecision(interaction) {
-    const adminRoleId = process.env.ADMIN_ROLE_ID;
-    if (!adminRoleId || !interaction.member.roles.cache.has(adminRoleId)) {
+    const config = ideasQueries.getConfig(interaction.guildId);
+    if (!canClose(interaction, config)) {
         return interaction.reply({ content: 'You do not have permission to close ideas.', flags: MessageFlags.Ephemeral });
     }
 
