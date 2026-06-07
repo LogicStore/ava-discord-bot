@@ -58,6 +58,13 @@ db.exec(`
 `);
 
 db.exec(`
+    CREATE TABLE IF NOT EXISTS welcome_config (
+        guild_id   TEXT PRIMARY KEY,
+        channel_id TEXT NOT NULL
+    );
+`);
+
+db.exec(`
     CREATE TABLE IF NOT EXISTS rating_config (
         guild_id   TEXT PRIMARY KEY,
         channel_id TEXT NOT NULL,
