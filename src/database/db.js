@@ -107,6 +107,32 @@ db.exec(`
     );
 `);
 
+db.exec(`
+    CREATE TABLE IF NOT EXISTS ideas_config (
+        guild_id   TEXT PRIMARY KEY,
+        channel_id TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS ideas (
+        message_id  TEXT PRIMARY KEY,
+        guild_id    TEXT NOT NULL,
+        channel_id  TEXT NOT NULL,
+        author_id   TEXT NOT NULL,
+        author_name TEXT NOT NULL,
+        avatar_url  TEXT,
+        content     TEXT NOT NULL,
+        created_at  INTEGER NOT NULL DEFAULT (unixepoch())
+    );
+
+    CREATE TABLE IF NOT EXISTS idea_votes (
+        id          INTEGER PRIMARY KEY AUTOINCREMENT,
+        message_id  TEXT NOT NULL,
+        user_id     TEXT NOT NULL,
+        vote_type   TEXT NOT NULL CHECK(vote_type IN ('up', 'down')),
+        UNIQUE(message_id, user_id)
+    );
+`);
+
 // Migrations
 try { db.exec("ALTER TABLE ticket_panels ADD COLUMN staff_roles TEXT NOT NULL DEFAULT '[]'"); } catch {}
 try { db.exec("ALTER TABLE tickets ADD COLUMN claimed_by TEXT"); } catch {}
@@ -114,5 +140,6 @@ try { db.exec("ALTER TABLE tickets ADD COLUMN closed_by TEXT"); } catch {}
 try { db.exec("ALTER TABLE ticket_panels ADD COLUMN required_role_id TEXT"); } catch {}
 try { db.exec("ALTER TABLE tickets ADD COLUMN close_reason TEXT"); } catch {}
 try { db.exec("ALTER TABLE ratings ADD COLUMN feedback TEXT"); } catch {}
+try { db.exec("ALTER TABLE ideas ADD COLUMN status TEXT NOT NULL DEFAULT 'pending'"); } catch {}
 
 module.exports = db;
