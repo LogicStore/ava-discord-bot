@@ -7,6 +7,7 @@ const {
 const ticketQueries = require('../database/ticketQueries');
 const { buildWelcomeMessage } = require('./ticketPanel');
 const { notify } = require('../utils/dmNotify');
+const { sendLog } = require('../utils/logger');
 
 const ACCENT = 0x0056CA;
 
@@ -36,7 +37,13 @@ async function handleClose(interaction) {
 
     ticketQueries.closeTicket(interaction.channelId);
 
-    // Notify creator if someone else closed the ticket
+    await sendLog(interaction.client, interaction.guildId, [
+        `## Ticket Closed`,
+        `**Ticket:** #${ticket.id}`,
+        `**Closed by:** <@${interaction.user.id}>`,
+        `**Opened by:** <@${ticket.user_id}>`,
+    ]);
+
     if (interaction.user.id !== ticket.user_id) {
         await notify(
             interaction.client,
@@ -85,6 +92,17 @@ async function handleRenameModal(interaction) {
     const newName = rawName.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '').slice(0, 100);
     await interaction.deferReply({ flags: MessageFlags.Ephemeral });
     await interaction.channel.setName(newName);
+
+    const ticket = ticketQueries.getTicketByChannel(interaction.channelId);
+    if (ticket) {
+        await sendLog(interaction.client, interaction.guildId, [
+            `## Ticket Renamed`,
+            `**Ticket:** #${ticket.id} — <#${interaction.channelId}>`,
+            `**New name:** ${newName}`,
+            `**Renamed by:** <@${interaction.user.id}>`,
+        ]);
+    }
+
     await interaction.editReply({ content: `Channel renamed to **${newName}**.` });
 }
 
@@ -124,6 +142,13 @@ async function handleClaim(interaction) {
 
     ticketQueries.claimTicket(interaction.channelId, interaction.user.id);
 
+    await sendLog(interaction.client, interaction.guildId, [
+        `## Ticket Claimed`,
+        `**Ticket:** #${ticket.id} — <#${interaction.channelId}>`,
+        `**Claimed by:** <@${interaction.user.id}>`,
+        `**Opened by:** <@${ticket.user_id}>`,
+    ]);
+
     const jumpUrl = `https://discord.com/channels/${interaction.guildId}/${interaction.channelId}`;
     await notify(
         interaction.client,
@@ -156,6 +181,13 @@ async function handleAddMe(interaction) {
         ReadMessageHistory: true,
         AttachFiles: true,
     });
+
+    await sendLog(interaction.client, interaction.guildId, [
+        `## Staff Joined Ticket`,
+        `**Ticket:** #${ticket.id} — <#${interaction.channelId}>`,
+        `**Staff:** <@${interaction.user.id}>`,
+        `**Opened by:** <@${ticket.user_id}>`,
+    ]);
 
     await notify(
         interaction.client,

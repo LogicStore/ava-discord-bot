@@ -5,6 +5,7 @@ const {
 } = require('discord.js');
 
 const ticketQueries = require('../database/ticketQueries');
+const { sendLog } = require('../utils/logger');
 
 const ACCENT = 0x0056CA;
 
@@ -100,6 +101,15 @@ async function handleSubjectModal(interaction) {
 
     const welcomeContainer = buildWelcomeMessage(ticketId, category, subject, userId, null);
     await ticketChannel.send({ components: [welcomeContainer], flags: MessageFlags.IsComponentsV2 });
+
+    await sendLog(interaction.client, guild.id, [
+        `## Ticket Created`,
+        `**Ticket:** #${ticketId} — <#${ticketChannel.id}>`,
+        `**Category:** ${category.name}`,
+        `**Opened by:** <@${userId}>`,
+        subject ? `**Subject:** ${subject}` : '',
+    ]);
+
     await interaction.editReply({ content: `Your ticket has been created: <#${ticketChannel.id}>` });
 }
 

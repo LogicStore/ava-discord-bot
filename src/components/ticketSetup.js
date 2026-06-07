@@ -7,6 +7,7 @@ const {
 
 const setupState = require('../state/setupState');
 const ticketQueries = require('../database/ticketQueries');
+const { sendLog } = require('../utils/logger');
 
 const ACCENT = 0x0056CA;
 
@@ -329,6 +330,15 @@ async function handlePublish(interaction) {
     const panelMessage = await targetChannel.send({ components: [panelContainer], flags: MessageFlags.IsComponentsV2 });
 
     ticketQueries.updatePanelMessageId(panelId, panelMessage.id);
+
+    await sendLog(interaction.client, guild.id, [
+        `## Panel Created`,
+        `**Name:** ${session.name}`,
+        `**Channel:** <#${session.targetChannelId}>`,
+        `**Categories:** ${publishedCategories.map(c => c.name).join(', ')}`,
+        `**Created by:** <@${interaction.user.id}>`,
+    ]);
+
     setupState.delete(sessionKey);
 
     const successContainer = new ContainerBuilder()

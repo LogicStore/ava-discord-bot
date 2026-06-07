@@ -1,6 +1,7 @@
 const { SlashCommandBuilder, ContainerBuilder, TextDisplayBuilder, MessageFlags } = require('discord.js');
 const ticketQueries = require('../../database/ticketQueries');
 const { hasTicketPermission } = require('../../components/ticketChannel');
+const { sendLog } = require('../../utils/logger');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -16,6 +17,13 @@ module.exports = {
         }
 
         ticketQueries.closeTicket(interaction.channelId);
+
+        await sendLog(interaction.client, interaction.guildId, [
+            `## Ticket Closed`,
+            `**Ticket:** #${ticket.id}`,
+            `**Closed by:** <@${interaction.user.id}>`,
+            `**Opened by:** <@${ticket.user_id}>`,
+        ]);
 
         const container = new ContainerBuilder()
             .setAccentColor(0x0056CA)

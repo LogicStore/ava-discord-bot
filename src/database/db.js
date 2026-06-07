@@ -47,6 +47,16 @@ db.exec(`
     );
 `);
 
+db.exec(`
+    CREATE TABLE IF NOT EXISTS log_configs (
+        id         INTEGER PRIMARY KEY AUTOINCREMENT,
+        guild_id   TEXT NOT NULL,
+        log_type   TEXT NOT NULL,
+        channel_id TEXT NOT NULL,
+        UNIQUE(guild_id, log_type)
+    );
+`);
+
 // Migrations
 try { db.exec("ALTER TABLE ticket_panels ADD COLUMN staff_roles TEXT NOT NULL DEFAULT '[]'"); } catch {}
 try { db.exec("ALTER TABLE tickets ADD COLUMN claimed_by TEXT"); } catch {}

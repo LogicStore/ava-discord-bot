@@ -1,6 +1,7 @@
 const { SlashCommandBuilder, MessageFlags } = require('discord.js');
 const ticketQueries = require('../../database/ticketQueries');
 const { hasStaffPermission } = require('../../components/ticketChannel');
+const { sendLog } = require('../../utils/logger');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -27,6 +28,14 @@ module.exports = {
 
         await interaction.deferReply({ flags: MessageFlags.Ephemeral });
         await interaction.channel.setName(newName);
+
+        await sendLog(interaction.client, interaction.guildId, [
+            `## Ticket Renamed`,
+            `**Ticket:** #${ticket.id} — <#${interaction.channelId}>`,
+            `**New name:** ${newName}`,
+            `**Renamed by:** <@${interaction.user.id}>`,
+        ]);
+
         await interaction.editReply({ content: `Channel renamed to **${newName}**.` });
     },
 };
