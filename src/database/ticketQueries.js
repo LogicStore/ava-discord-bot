@@ -1,11 +1,11 @@
 const db = require('./db');
 
 module.exports = {
-    createPanel(guildId, channelId, name, description, thumbnail, staffRoles) {
+    createPanel(guildId, channelId, name, description, thumbnail, staffRoles, requiredRoleId) {
         return db.prepare(`
-            INSERT INTO ticket_panels (guild_id, channel_id, name, description, thumbnail, staff_roles)
-            VALUES (?, ?, ?, ?, ?, ?)
-        `).run(guildId, channelId, name, description, thumbnail, JSON.stringify(staffRoles || []));
+            INSERT INTO ticket_panels (guild_id, channel_id, name, description, thumbnail, staff_roles, required_role_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        `).run(guildId, channelId, name, description, thumbnail, JSON.stringify(staffRoles || []), requiredRoleId ?? null);
     },
 
     updatePanelMessageId(panelId, messageId) {

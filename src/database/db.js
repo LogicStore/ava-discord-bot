@@ -58,6 +58,31 @@ db.exec(`
 `);
 
 db.exec(`
+    CREATE TABLE IF NOT EXISTS giveaways (
+        id               INTEGER PRIMARY KEY AUTOINCREMENT,
+        guild_id         TEXT NOT NULL,
+        channel_id       TEXT NOT NULL,
+        message_id       TEXT,
+        prizes           TEXT NOT NULL DEFAULT '[]',
+        max_participants INTEGER,
+        required_role_id TEXT,
+        winner_count     INTEGER NOT NULL DEFAULT 1,
+        ends_at          INTEGER NOT NULL,
+        status           TEXT NOT NULL DEFAULT 'active',
+        created_by       TEXT NOT NULL,
+        created_at       INTEGER NOT NULL DEFAULT (unixepoch())
+    );
+
+    CREATE TABLE IF NOT EXISTS giveaway_entries (
+        id           INTEGER PRIMARY KEY AUTOINCREMENT,
+        giveaway_id  INTEGER NOT NULL,
+        user_id      TEXT NOT NULL,
+        UNIQUE(giveaway_id, user_id),
+        FOREIGN KEY (giveaway_id) REFERENCES giveaways(id) ON DELETE CASCADE
+    );
+`);
+
+db.exec(`
     CREATE TABLE IF NOT EXISTS welcome_config (
         guild_id   TEXT PRIMARY KEY,
         channel_id TEXT NOT NULL
@@ -86,6 +111,7 @@ db.exec(`
 try { db.exec("ALTER TABLE ticket_panels ADD COLUMN staff_roles TEXT NOT NULL DEFAULT '[]'"); } catch {}
 try { db.exec("ALTER TABLE tickets ADD COLUMN claimed_by TEXT"); } catch {}
 try { db.exec("ALTER TABLE tickets ADD COLUMN closed_by TEXT"); } catch {}
+try { db.exec("ALTER TABLE ticket_panels ADD COLUMN required_role_id TEXT"); } catch {}
 try { db.exec("ALTER TABLE tickets ADD COLUMN close_reason TEXT"); } catch {}
 try { db.exec("ALTER TABLE ratings ADD COLUMN feedback TEXT"); } catch {}
 

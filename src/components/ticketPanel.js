@@ -47,6 +47,15 @@ async function handleSubjectModal(interaction) {
         });
     }
 
+    const panel = ticketQueries.getPanelById(category.panel_id);
+
+    if (panel?.required_role_id && !interaction.member.roles.cache.has(panel.required_role_id)) {
+        return interaction.reply({
+            content: `You need the <@&${panel.required_role_id}> role to open a ticket.`,
+            flags: MessageFlags.Ephemeral,
+        });
+    }
+
     await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
     const guild = interaction.guild;
@@ -54,7 +63,6 @@ async function handleSubjectModal(interaction) {
     const adminRoleId = process.env.ADMIN_ROLE_ID;
     const safeUsername = interaction.user.username.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 20) || 'user';
 
-    const panel = ticketQueries.getPanelById(category.panel_id);
     const staffRoles = JSON.parse(panel?.staff_roles || '[]');
 
     const ticketResult = ticketQueries.createTicket(guild.id, userId, catId, subject);

@@ -4,6 +4,7 @@ const { Client, GatewayIntentBits, MessageFlags, ActivityType } = require('disco
 const commandHandler = require('./handlers/commandHandler');
 const eventHandler = require('./handlers/eventHandler');
 const componentHandler = require('./handlers/componentHandler');
+const giveawayScheduler = require('./utils/giveawayScheduler');
 
 const client = new Client({
     intents: [
@@ -62,6 +63,7 @@ client.once('clientReady', async () => {
     console.log(`🔧 ${client.components.length} component handler(s) loaded\n`);
 
     await client.application.edit({ description: 'Slave for Logic Store' }).catch(() => {});
+    giveawayScheduler.start(client);
 
     client.user.setPresence({
         status: 'online',

@@ -33,6 +33,7 @@ module.exports = {
             description: 'Open a ticket by selecting a category below.',
             thumbnail: null,
             staffRoles: [],
+            requiredRoleId: null,
             categories: [],
         });
 

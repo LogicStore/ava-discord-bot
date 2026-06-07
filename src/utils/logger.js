@@ -1,11 +1,9 @@
 const { ContainerBuilder, TextDisplayBuilder, MessageFlags } = require('discord.js');
 const logQueries = require('../database/logQueries');
 
-const LOG_CHANNEL = 'ticket_logs';
-
-async function sendLog(client, guildId, lines) {
+async function sendLog(client, guildId, lines, logType = 'ticket_logs') {
     try {
-        const config = logQueries.getLogConfig(guildId, LOG_CHANNEL);
+        const config = logQueries.getLogConfig(guildId, logType);
         if (!config) return;
 
         const channel = await client.channels.fetch(config.channel_id);

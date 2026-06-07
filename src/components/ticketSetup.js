@@ -36,6 +36,7 @@ function buildSetupMessage(session) {
                 `**Description:** ${session.description}`,
                 `**Thumbnail:** ${session.thumbnail || '*Not set*'}`,
                 `**Staff Roles:** ${rolesList}`,
+                `**Required Role:** ${session.requiredRoleId ? `<@&${session.requiredRoleId}>` : '*None*'}`,
                 '',
                 '**Categories:**',
                 catList,
@@ -48,10 +49,11 @@ function buildSetupMessage(session) {
                     .setCustomId('ticket_setup_select')
                     .setPlaceholder('Select an action to configure...')
                     .addOptions([
-                        { label: 'Add Category',    value: 'add_category',    description: 'Add a new ticket category' },
-                        { label: 'Remove Category', value: 'remove_category', description: 'Remove an existing category' },
-                        { label: 'Panel Info',      value: 'panel_info',      description: 'Edit the panel name and description' },
-                        { label: 'Set Thumbnail',   value: 'thumbnail',       description: 'Set the panel thumbnail image URL' },
+                        { label: 'Add Category',      value: 'add_category',    description: 'Add a new ticket category' },
+                        { label: 'Remove Category',   value: 'remove_category', description: 'Remove an existing category' },
+                        { label: 'Panel Info',        value: 'panel_info',      description: 'Edit the panel name and description' },
+                        { label: 'Set Thumbnail',     value: 'thumbnail',       description: 'Set the panel thumbnail image URL' },
+                        { label: 'Set Required Role', value: 'required_role',   description: 'Role required to open a ticket' },
                     ])
             )
         )
@@ -245,6 +247,40 @@ async function handleSetupSelect(interaction) {
                 )
         );
     }
+
+    if (value === 'required_role') {
+        const currentRole = session.requiredRoleId ? `<@&${session.requiredRoleId}>` : '*None*';
+        return interaction.update({
+            components: [
+                new ContainerBuilder()
+                    .setAccentColor(ACCENT)
+                    .addTextDisplayComponents(
+                        new TextDisplayBuilder().setContent(
+                            `## Set Required Role\nMembers need this role to open a ticket.\n\n**Current:** ${currentRole}`
+                        )
+                    )
+                    .addSeparatorComponents(new SeparatorBuilder())
+                    .addActionRowComponents(
+                        new ActionRowBuilder().addComponents(
+                            new RoleSelectMenuBuilder()
+                                .setCustomId('ticket_setup_required_role_select')
+                                .setPlaceholder('Select a role (leave empty to remove)...')
+                                .setMinValues(0)
+                                .setMaxValues(1)
+                        )
+                    )
+                    .addActionRowComponents(
+                        new ActionRowBuilder().addComponents(
+                            new ButtonBuilder()
+                                .setCustomId('ticket_setup_back')
+                                .setLabel('Back')
+                                .setStyle(ButtonStyle.Secondary)
+                        )
+                    ),
+            ],
+            flags: MessageFlags.IsComponentsV2,
+        });
+    }
 }
 
 async function handleRemoveSelect(interaction) {
@@ -273,6 +309,15 @@ async function handleRolesSelect(interaction) {
     await interaction.update(buildRolesMessage(session));
 }
 
+async function handleRequiredRoleSelect(interaction) {
+    const sessionKey = setupState.key(interaction.guildId, interaction.user.id);
+    const session = setupState.get(sessionKey);
+    if (!session) return;
+    session.requiredRoleId = interaction.values[0] ?? null;
+    setupState.set(sessionKey, session);
+    await interaction.update(buildSetupMessage(session));
+}
+
 async function handleBack(interaction) {
     const sessionKey = setupState.key(interaction.guildId, interaction.user.id);
     const session = setupState.get(sessionKey);
@@ -292,7 +337,7 @@ async function handlePublish(interaction) {
 
     const panelResult = ticketQueries.createPanel(
         guild.id, session.targetChannelId, session.name,
-        session.description, session.thumbnail, session.staffRoles
+        session.description, session.thumbnail, session.staffRoles, session.requiredRoleId
     );
     const panelId = panelResult.lastInsertRowid;
 
@@ -390,6 +435,7 @@ module.exports = {
         'ticket_setup_publish',
         'ticket_setup_roles_button',
         'ticket_setup_roles_select',
+        'ticket_setup_required_role_select',
         'ticket_modal_category',
         'ticket_modal_info',
         'ticket_modal_thumbnail',
@@ -404,8 +450,9 @@ module.exports = {
             case 'ticket_setup_back':         return handleBack(interaction);
             case 'ticket_setup_publish':      return handlePublish(interaction);
             case 'ticket_setup_roles_button': return handleRolesButton(interaction);
-            case 'ticket_setup_roles_select': return handleRolesSelect(interaction);
-            case 'ticket_modal_category':     return handleCategoryModal(interaction);
+            case 'ticket_setup_roles_select':          return handleRolesSelect(interaction);
+            case 'ticket_setup_required_role_select': return handleRequiredRoleSelect(interaction);
+            case 'ticket_modal_category':             return handleCategoryModal(interaction);
             case 'ticket_modal_info':         return handleInfoModal(interaction);
             case 'ticket_modal_thumbnail':    return handleThumbnailModal(interaction);
         }
