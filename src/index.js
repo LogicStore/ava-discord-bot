@@ -1,5 +1,5 @@
 require('dotenv').config();
-const { Client, GatewayIntentBits, MessageFlags } = require('discord.js');
+const { Client, GatewayIntentBits, MessageFlags, ActivityType } = require('discord.js');
 
 const commandHandler = require('./handlers/commandHandler');
 const eventHandler = require('./handlers/eventHandler');
@@ -56,10 +56,21 @@ client.on('interactionCreate', async (interaction) => {
     }
 });
 
-client.once('clientReady', () => {
+client.once('clientReady', async () => {
     console.log(`\n✅ Ava is online! Logged in as ${client.user.tag}`);
     console.log(`📦 ${client.commands.size} command(s) loaded`);
     console.log(`🔧 ${client.components.length} component handler(s) loaded\n`);
+
+    await client.application.edit({ description: 'Slave for Logic Store' }).catch(() => {});
+
+    client.user.setPresence({
+        status: 'online',
+        activities: [{
+            name: 'Logic Store',
+            type: ActivityType.Streaming,
+            url: 'https://www.twitch.tv/logicstore',
+        }],
+    });
 });
 
 client.login(process.env.DISCORD_TOKEN);
