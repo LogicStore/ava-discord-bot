@@ -442,6 +442,7 @@ module.exports = {
     ],
 
     buildSetupMessage,
+    buildPanelMessage,
 
     async execute(interaction) {
         switch (interaction.customId) {

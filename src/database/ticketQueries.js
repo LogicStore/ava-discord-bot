@@ -94,6 +94,17 @@ module.exports = {
         return db.prepare("SELECT * FROM tickets WHERE guild_id = ? AND user_id = ? AND status = 'open'").get(guildId, userId);
     },
 
+    updatePanel(panelId, name, description, thumbnail, staffRoles, requiredRoleId) {
+        db.prepare(`
+            UPDATE ticket_panels SET name = ?, description = ?, thumbnail = ?, staff_roles = ?, required_role_id = ?
+            WHERE id = ?
+        `).run(name, description, thumbnail, JSON.stringify(staffRoles || []), requiredRoleId ?? null, panelId);
+    },
+
+    deleteCategoryById(categoryId) {
+        db.prepare('DELETE FROM ticket_categories WHERE id = ?').run(categoryId);
+    },
+
     getPanelByTicketChannel(channelId) {
         return db.prepare(`
             SELECT tp.* FROM ticket_panels tp
